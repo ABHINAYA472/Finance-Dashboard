@@ -7,88 +7,132 @@ import Cards from "./components/Cards";
 import Charts from "./components/Charts";
 import Table from "./components/Table";
 import Insights from "./components/Insights";
+import Reports from "./components/Reports";
 
 export default function App() {
   const [role, setRole] = useState("viewer");
   const [page, setPage] = useState("dashboard");
 
-  // ✅ Transactions
   const [transactions, setTransactions] = useState([
-    { date: "Apr 1", amount: 500, category: "Food", type: "expense" },
-    { date: "Apr 2", amount: 2000, category: "Salary", type: "income" },
-    { date: "Apr 3", amount: 800, category: "Travel", type: "expense" },
+    {
+      date: "Apr 1",
+      amount: 500,
+      category: "Food",
+      type: "expense",
+    },
+    {
+      date: "Apr 2",
+      amount: 2000,
+      category: "Salary",
+      type: "income",
+    },
+    {
+      date: "Apr 3",
+      amount: 800,
+      category: "Travel",
+      type: "expense",
+    },
   ]);
 
-  // ✅ Modal + Form State
   const [showForm, setShowForm] = useState(false);
 
   const [form, setForm] = useState({
     date: "",
     amount: "",
     category: "",
-    type: "expense"
+    type: "expense",
   });
 
-  // ✅ Handle Input
+  // Handle form input
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  // ✅ Add Transaction (real input)
+  // Add transaction
   const addTransaction = () => {
-    if (!form.date || !form.amount || !form.category) return;
+    if (!form.date || !form.amount || !form.category) {
+      alert("Please fill all fields");
+      return;
+    }
 
-    setTransactions([
-      ...transactions,
-      { ...form, amount: Number(form.amount) }
-    ]);
+    const newTransaction = {
+      date: form.date,
+      amount: Number(form.amount),
+      category: form.category,
+      type: form.type,
+    };
 
-    setForm({ date: "", amount: "", category: "", type: "expense" });
+    setTransactions([...transactions, newTransaction]);
+
+    setForm({
+      date: "",
+      amount: "",
+      category: "",
+      type: "expense",
+    });
+
     setShowForm(false);
   };
 
-  // ✅ Delete Transaction
+  // Delete transaction
   const deleteTransaction = (index) => {
+    if (role !== "admin") {
+      alert("Only Admin can delete transactions.");
+      return;
+    }
+
     const updated = transactions.filter((_, i) => i !== index);
     setTransactions(updated);
   };
 
-  // ✅ Calculations
+  // Calculate income
   const income = transactions
     .filter((t) => t.type === "income")
-    .reduce((a, b) => a + b.amount, 0);
+    .reduce((total, t) => total + Number(t.amount), 0);
 
+  // Calculate expenses
   const expense = transactions
     .filter((t) => t.type === "expense")
-    .reduce((a, b) => a + b.amount, 0);
+    .reduce((total, t) => total + Number(t.amount), 0);
 
+  // Calculate balance
   const balance = income - expense;
 
-  // ✅ Chart Data
+  // Line chart data
   const lineData = {
     labels: transactions.map((t) => t.date),
+
     datasets: [
       {
-        label: "Amount",
+        label: "Transaction Amount",
         data: transactions.map((t) => t.amount),
-        borderWidth: 2,
+        borderWidth: 3,
+        tension: 0.3,
       },
     ],
   };
 
+  // Category-wise expense calculation
   const categoryData = {};
+
   transactions.forEach((t) => {
     if (t.type === "expense") {
       categoryData[t.category] =
-        (categoryData[t.category] || 0) + t.amount;
+        (categoryData[t.category] || 0) + Number(t.amount);
     }
   });
 
   const pieData = {
     labels: Object.keys(categoryData),
+
     datasets: [
       {
+        label: "Expenses",
         data: Object.values(categoryData),
+        borderWidth: 1,
       },
     ],
   };
@@ -97,62 +141,98 @@ export default function App() {
     <div className="layout">
 
       {/* Sidebar */}
-      <Sidebar setPage={setPage} />
+      <Sidebar
+        page={page}
+        setPage={setPage}
+      />
 
-      {/* Main */}
+      {/* Main Content */}
       <div className="main">
 
-        <Header role={role} setRole={setRole} />
+        {/* Header */}
+        <Header
+          role={role}
+          setRole={setRole}
+          page={page}
+        />
 
         {/* Dashboard */}
         {page === "dashboard" && (
           <>
-            <Cards balance={balance} income={income} expense={expense} />
-            <Charts lineData={lineData} pieData={pieData} />
-            <Insights />
+            <Cards
+              balance={balance}
+              income={income}
+              expense={expense}
+            />
+
+            <Charts
+              lineData={lineData}
+              pieData={pieData}
+            />
+
+            <Insights
+              transactions={transactions}
+              income={income}
+              expense={expense}
+              balance={balance}
+            />
           </>
         )}
 
         {/* Transactions */}
         {page === "transactions" && (
           <>
-            <h2>Transactions</h2>
+            <div className="page-header">
+              <h2>Transactions</h2>
 
-            {role === "admin" && (
-              <button onClick={() => setShowForm(true)}>
-                + Add Transaction
-              </button>
-            )}
+              {role === "admin" && (
+                <button
+                  className="add-button"
+                  onClick={() => setShowForm(true)}
+                >
+                  + Add Transaction
+                </button>
+              )}
+            </div>
 
             <Table
               data={transactions}
               deleteTx={deleteTransaction}
+              role={role}
             />
           </>
         )}
 
         {/* Reports */}
         {page === "reports" && (
-          <h2>Reports Coming Soon 📊</h2>
+          <Reports
+            transactions={transactions}
+            income={income}
+            expense={expense}
+            balance={balance}
+          />
         )}
 
       </div>
 
-      {/* ✅ MODAL FORM */}
+      {/* Add Transaction Modal */}
       {showForm && (
         <div className="modal">
+
           <div className="modal-content">
+
             <h3>Add Transaction</h3>
 
             <input
               name="date"
-              placeholder="Date"
+              placeholder="Date (Example: Apr 10)"
               value={form.date}
               onChange={handleChange}
             />
 
             <input
               name="amount"
+              type="number"
               placeholder="Amount"
               value={form.amount}
               onChange={handleChange}
@@ -170,19 +250,38 @@ export default function App() {
               value={form.type}
               onChange={handleChange}
             >
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
+              <option value="expense">
+                Expense
+              </option>
+
+              <option value="income">
+                Income
+              </option>
             </select>
 
             <div className="modal-buttons">
-              <button onClick={addTransaction}>Add</button>
-              <button onClick={() => setShowForm(false)}>Cancel</button>
+
+              <button
+                className="add-button"
+                onClick={addTransaction}
+              >
+                Add
+              </button>
+
+              <button
+                className="cancel-button"
+                onClick={() => setShowForm(false)}
+              >
+                Cancel
+              </button>
+
             </div>
+
           </div>
+
         </div>
       )}
 
     </div>
   );
 }
-           

@@ -1,12 +1,34 @@
-export default function Sidebar({ setPage }) {
+export default function Sidebar({ setPage, page }) {
   return (
     <div className="sidebar">
+
       <h2>💰 Finance</h2>
+
       <ul>
-        <li onClick={() => setPage("dashboard")}>Dashboard</li>
-        <li onClick={() => setPage("transactions")}>Transactions</li>
-        <li onClick={() => setPage("reports")}>Reports</li>
+
+        <li
+          className={page === "dashboard" ? "active" : ""}
+          onClick={() => setPage("dashboard")}
+        >
+          📊 Dashboard
+        </li>
+
+        <li
+          className={page === "transactions" ? "active" : ""}
+          onClick={() => setPage("transactions")}
+        >
+          💳 Transactions
+        </li>
+
+        <li
+          className={page === "reports" ? "active" : ""}
+          onClick={() => setPage("reports")}
+        >
+          📈 Reports
+        </li>
+
       </ul>
+
     </div>
   );
 }

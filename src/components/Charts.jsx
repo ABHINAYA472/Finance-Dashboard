@@ -1,4 +1,5 @@
 import { Line, Pie } from "react-chartjs-2";
+
 import {
   Chart as ChartJS,
   LineElement,
@@ -7,10 +8,9 @@ import {
   LinearScale,
   PointElement,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 
-// ✅ REQUIRED (this was missing)
 ChartJS.register(
   LineElement,
   ArcElement,
@@ -21,18 +21,48 @@ ChartJS.register(
   Legend
 );
 
-export default function Charts({ lineData, pieData }) {
+export default function Charts({
+  lineData,
+  pieData,
+}) {
+
   return (
     <div className="charts">
+
       <div className="chart-box">
-        <h3>Trend</h3>
-        <Line data={lineData} />
+
+        <h3>Transaction Trend</h3>
+
+        <Line
+          data={lineData}
+          options={{
+            responsive: true,
+            maintainAspectRatio: true,
+          }}
+        />
+
       </div>
 
       <div className="chart-box">
-        <h3>Spending</h3>
-        <Pie data={pieData} />
+
+        <h3>Spending by Category</h3>
+
+        {pieData.labels.length > 0 ? (
+          <Pie
+            data={pieData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: true,
+            }}
+          />
+        ) : (
+          <p className="no-data">
+            No expense data available.
+          </p>
+        )}
+
       </div>
+
     </div>
   );
 }
