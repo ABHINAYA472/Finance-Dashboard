@@ -156,9 +156,9 @@ export default function MLPrediction() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:5000/predict",
-        {
+     const response = await fetch(
+  "https://finance-dashboard-jhqq.onrender.com/predict",
+  {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
