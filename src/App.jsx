@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 import Sidebar from "./components/Sidebar";
@@ -8,280 +8,210 @@ import Charts from "./components/Charts";
 import Table from "./components/Table";
 import Insights from "./components/Insights";
 import Reports from "./components/Reports";
+import MLPrediction from "./components/MLPrediction";
 
 export default function App() {
   const [role, setRole] = useState("viewer");
   const [page, setPage] = useState("dashboard");
 
-  const [transactions, setTransactions] = useState([
-    {
-      date: "Apr 1",
-      amount: 500,
-      category: "Food",
-      type: "expense",
-    },
-    {
-      date: "Apr 2",
-      amount: 2000,
-      category: "Salary",
-      type: "income",
-    },
-    {
-      date: "Apr 3",
-      amount: 800,
-      category: "Travel",
-      type: "expense",
-    },
-  ]);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [showForm, setShowForm] = useState(false);
+  useEffect(() => {
+    fetch("http://127.0.0.1:5000/dashboard-data")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load dashboard data");
+        }
 
-  const [form, setForm] = useState({
-    date: "",
-    amount: "",
-    category: "",
-    type: "expense",
-  });
+        return response.json();
+      })
+      .then((data) => {
+        console.log("DASHBOARD DATA:", data);
 
-  // Handle form input
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
+        setDashboardData(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.log("ERROR:", err);
 
-  // Add transaction
-  const addTransaction = () => {
-    if (!form.date || !form.amount || !form.category) {
-      alert("Please fill all fields");
-      return;
-    }
+        setError(
+          "Cannot connect to finance backend. Make sure Flask is running."
+        );
 
-    const newTransaction = {
-      date: form.date,
-      amount: Number(form.amount),
-      category: form.category,
-      type: form.type,
-    };
+        setLoading(false);
+      });
+  }, []);
 
-    setTransactions([...transactions, newTransaction]);
+  if (loading) {
+    return (
+      <div className="layout">
+        <Sidebar setPage={setPage} />
 
-    setForm({
-      date: "",
-      amount: "",
-      category: "",
-      type: "expense",
-    });
+        <div className="main">
+          <Header
+            role={role}
+            setRole={setRole}
+          />
 
-    setShowForm(false);
-  };
+          <div className="loading">
+            Loading financial dataset...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Delete transaction
-  const deleteTransaction = (index) => {
-    if (role !== "admin") {
-      alert("Only Admin can delete transactions.");
-      return;
-    }
+  if (error) {
+    return (
+      <div className="layout">
+        <Sidebar setPage={setPage} />
 
-    const updated = transactions.filter((_, i) => i !== index);
-    setTransactions(updated);
-  };
+        <div className="main">
+          <Header
+            role={role}
+            setRole={setRole}
+          />
 
-  // Calculate income
-  const income = transactions
-    .filter((t) => t.type === "income")
-    .reduce((total, t) => total + Number(t.amount), 0);
+          <div className="error">
+            ⚠️ {error}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Calculate expenses
-  const expense = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((total, t) => total + Number(t.amount), 0);
-
-  // Calculate balance
-  const balance = income - expense;
-
-  // Line chart data
-  const lineData = {
-    labels: transactions.map((t) => t.date),
-
-    datasets: [
-      {
-        label: "Transaction Amount",
-        data: transactions.map((t) => t.amount),
-        borderWidth: 3,
-        tension: 0.3,
-      },
-    ],
-  };
-
-  // Category-wise expense calculation
-  const categoryData = {};
-
-  transactions.forEach((t) => {
-    if (t.type === "expense") {
-      categoryData[t.category] =
-        (categoryData[t.category] || 0) + Number(t.amount);
-    }
-  });
-
-  const pieData = {
-    labels: Object.keys(categoryData),
-
-    datasets: [
-      {
-        label: "Expenses",
-        data: Object.values(categoryData),
-        borderWidth: 1,
-      },
-    ],
-  };
+  const transactions = dashboardData?.transactions || [];
+  const summary = dashboardData?.summary || {};
 
   return (
     <div className="layout">
 
-      {/* Sidebar */}
-      <Sidebar
-        page={page}
-        setPage={setPage}
-      />
+      <Sidebar setPage={setPage} />
 
-      {/* Main Content */}
       <div className="main">
 
-        {/* Header */}
         <Header
           role={role}
           setRole={setRole}
-          page={page}
         />
 
-        {/* Dashboard */}
+        {/* ================= DASHBOARD ================= */}
+
         {page === "dashboard" && (
           <>
+            <div className="page-title">
+              <h2>Investment Dashboard</h2>
+
+              <p>
+                Startup investment analytics based on historical
+                financial data.
+              </p>
+            </div>
+
             <Cards
-              balance={balance}
-              income={income}
-              expense={expense}
+              totalInvestment={summary.total_investment}
+              totalTransactions={summary.total_transactions}
+              averageInvestment={summary.average_investment}
+              largestInvestment={summary.largest_investment}
             />
 
-            <Charts
-              lineData={lineData}
-              pieData={pieData}
-            />
+           <Charts
+  yearlyData={dashboardData?.yearly_data}
+  industryData={dashboardData?.industry_data}
+  cityData={dashboardData?.city_data}
+/>
+<div className="recent-section">
+  <div className="recent-header">
+    <div>
+      <h2>Recent Investments</h2>
+      <p>Latest startup investment records</p>
+    </div>
+
+    <button onClick={() => setPage("transactions")}>
+      View All
+    </button>
+  </div>
+
+  <div className="recent-table-wrapper">
+    <table className="recent-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Startup</th>
+          <th>Industry</th>
+          <th>Investment Type</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {transactions.slice(0, 5).map((transaction, index) => (
+          <tr key={index}>
+            <td>{transaction.date || "-"}</td>
+
+            <td className="recent-startup">
+              {transaction.startup || "-"}
+            </td>
+
+            <td>{transaction.industry || "-"}</td>
+
+            <td>
+              <span className="recent-type">
+                {transaction.investment_type || "-"}
+              </span>
+            </td>
+
+            <td className="recent-amount">
+              ${Number(transaction.amount || 0).toLocaleString("en-US")}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
 
             <Insights
               transactions={transactions}
-              income={income}
-              expense={expense}
-              balance={balance}
+              summary={summary}
             />
           </>
         )}
 
-        {/* Transactions */}
+        {/* ================= TRANSACTIONS ================= */}
+
         {page === "transactions" && (
           <>
-            <div className="page-header">
-              <h2>Transactions</h2>
+            <div className="page-title">
+              <h2>Investment Transactions</h2>
 
-              {role === "admin" && (
-                <button
-                  className="add-button"
-                  onClick={() => setShowForm(true)}
-                >
-                  + Add Transaction
-                </button>
-              )}
+              <p>
+                Historical startup investment records from the
+                Finance dataset.
+              </p>
             </div>
 
-            <Table
-              data={transactions}
-              deleteTx={deleteTransaction}
-              role={role}
-            />
+            <Table data={transactions} />
           </>
         )}
 
-        {/* Reports */}
+        {/* ================= REPORTS ================= */}
+
         {page === "reports" && (
           <Reports
-            transactions={transactions}
-            income={income}
-            expense={expense}
-            balance={balance}
+            data={dashboardData}
           />
         )}
 
+        {/* ================= ML PREDICTION ================= */}
+
+        {page === "ml-prediction" && (
+          <MLPrediction />
+        )}
+
       </div>
-
-      {/* Add Transaction Modal */}
-      {showForm && (
-        <div className="modal">
-
-          <div className="modal-content">
-
-            <h3>Add Transaction</h3>
-
-            <input
-              name="date"
-              placeholder="Date (Example: Apr 10)"
-              value={form.date}
-              onChange={handleChange}
-            />
-
-            <input
-              name="amount"
-              type="number"
-              placeholder="Amount"
-              value={form.amount}
-              onChange={handleChange}
-            />
-
-            <input
-              name="category"
-              placeholder="Category"
-              value={form.category}
-              onChange={handleChange}
-            />
-
-            <select
-              name="type"
-              value={form.type}
-              onChange={handleChange}
-            >
-              <option value="expense">
-                Expense
-              </option>
-
-              <option value="income">
-                Income
-              </option>
-            </select>
-
-            <div className="modal-buttons">
-
-              <button
-                className="add-button"
-                onClick={addTransaction}
-              >
-                Add
-              </button>
-
-              <button
-                className="cancel-button"
-                onClick={() => setShowForm(false)}
-              >
-                Cancel
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
     </div>
   );
 }

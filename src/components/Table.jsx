@@ -1,88 +1,82 @@
-export default function Table({
-  data,
-  deleteTx,
-  role,
-}) {
+export default function Table({ data = [] }) {
+  const formatAmount = (amount) => {
+    return Number(amount || 0).toLocaleString("en-US", {
+      maximumFractionDigits: 2
+    });
+  };
+
   return (
-    <div className="table-section">
+    <div className="transaction-table-container">
 
-      <table>
+      <div className="transaction-table-header">
+        <div>
+          <h3>Investment Transactions</h3>
+          <p>Recent startup investment records</p>
+        </div>
 
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>Category</th>
-            <th>Type</th>
+        <span>
+          {data.length.toLocaleString()} Records
+        </span>
+      </div>
 
-            {role === "admin" && (
-              <th>Action</th>
-            )}
-          </tr>
-        </thead>
+      <div className="table-wrapper">
 
-        <tbody>
+        <table className="transaction-table">
 
-          {data.length === 0 ? (
-
+          <thead>
             <tr>
-              <td
-                colSpan={role === "admin" ? 5 : 4}
-              >
-                No transactions available
-              </td>
+              <th>Date</th>
+              <th>Startup</th>
+              <th>Industry</th>
+              <th>City</th>
+              <th>Investment Type</th>
+              <th>Amount</th>
             </tr>
+          </thead>
 
-          ) : (
-
-            data.map((transaction, index) => (
-
+          <tbody>
+            {data.slice(0, 50).map((transaction, index) => (
               <tr key={index}>
 
                 <td>
-                  {transaction.date}
+                  {transaction.date || "-"}
+                </td>
+
+                <td className="startup-name">
+                  {transaction.startup || "-"}
                 </td>
 
                 <td>
-                  ₹{Number(transaction.amount).toLocaleString()}
+                  {transaction.industry || "-"}
                 </td>
 
                 <td>
-                  {transaction.category}
+                  {transaction.city || "-"}
                 </td>
 
                 <td>
-                  <span
-                    className={
-                      transaction.type === "income"
-                        ? "income-label"
-                        : "expense-label"
-                    }
-                  >
-                    {transaction.type}
+                  <span className="investment-type">
+                    {transaction.investment_type || "-"}
                   </span>
                 </td>
 
-                {role === "admin" && (
-                  <td>
-                    <button
-                      className="delete-button"
-                      onClick={() => deleteTx(index)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                )}
+                <td className="amount">
+                  ${formatAmount(transaction.amount)}
+                </td>
 
               </tr>
+            ))}
+          </tbody>
 
-            ))
+        </table>
 
-          )}
+      </div>
 
-        </tbody>
-
-      </table>
+      {data.length > 50 && (
+        <div className="table-footer">
+          Showing 50 of {data.length.toLocaleString()} records
+        </div>
+      )}
 
     </div>
   );

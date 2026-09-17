@@ -1,69 +1,71 @@
 export default function Insights({
-  transactions,
-  income,
-  expense,
-  balance,
+  transactions = [],
+  summary = {}
 }) {
+  const totalInvestment =
+    Number(summary.total_investment || 0);
 
-  const expenses = transactions.filter(
-    (transaction) => transaction.type === "expense"
-  );
+  const averageInvestment =
+    Number(summary.average_investment || 0);
 
-  const categoryTotals = {};
+  const largestInvestment =
+    Number(summary.largest_investment || 0);
 
-  expenses.forEach((transaction) => {
-    categoryTotals[transaction.category] =
-      (categoryTotals[transaction.category] || 0) +
-      Number(transaction.amount);
-  });
+  const totalTransactions =
+    Number(
+      summary.total_transactions ||
+      transactions.length ||
+      0
+    );
 
-  let highestCategory = "None";
-  let highestAmount = 0;
-
-  Object.keys(categoryTotals).forEach((category) => {
-    if (categoryTotals[category] > highestAmount) {
-      highestAmount = categoryTotals[category];
-      highestCategory = category;
-    }
-  });
+  const formatAmount = (amount) => {
+    return Number(amount || 0).toLocaleString("en-US", {
+      maximumFractionDigits: 2
+    });
+  };
 
   return (
     <div className="insights">
 
-      <h3>💡 Insights</h3>
+      <h2>
+        Financial Insights
+      </h2>
 
-      <p>
-        Highest Spending:{" "}
-        <strong>{highestCategory}</strong>
-      </p>
+      <div className="insight-grid">
 
-      <p>
-        Highest Spending Amount:{" "}
-        <strong>
-          ₹{highestAmount.toLocaleString()}
-        </strong>
-      </p>
+        <div className="insight-card">
+          <h3>Total Investment</h3>
 
-      <p>
-        Total Income:{" "}
-        <strong>
-          ₹{income.toLocaleString()}
-        </strong>
-      </p>
+          <p>
+            ${formatAmount(totalInvestment)}
+          </p>
+        </div>
 
-      <p>
-        Total Expenses:{" "}
-        <strong>
-          ₹{expense.toLocaleString()}
-        </strong>
-      </p>
+        <div className="insight-card">
+          <h3>Total Transactions</h3>
 
-      <p>
-        Current Balance:{" "}
-        <strong>
-          ₹{balance.toLocaleString()}
-        </strong>
-      </p>
+          <p>
+            {totalTransactions.toLocaleString()}
+          </p>
+        </div>
+
+        <div className="insight-card">
+          <h3>Average Investment</h3>
+
+          <p>
+            ${formatAmount(averageInvestment)}
+          </p>
+        </div>
+
+        <div className="insight-card">
+          <h3>Largest Investment</h3>
+
+          <p>
+            ${formatAmount(largestInvestment)}
+          </p>
+        </div>
+
+      </div>
 
     </div>
   );

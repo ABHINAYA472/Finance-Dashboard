@@ -1,261 +1,520 @@
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
+export default function Reports({ data }) {
+  const transactions = data?.transactions || [];
+  const summary = data?.summary || {};
 
-import { Bar, Doughnut } from "react-chartjs-2";
+  const industryData = data?.industry_data || {};
+  const cityData = data?.city_data || {};
+  const investmentTypeData = data?.investment_type_data || {};
+  const yearlyData = data?.yearly_data || {};
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  Tooltip,
-  Legend
-);
+  const formatMoney = (amount) => {
+    const value = Number(amount || 0);
 
-export default function Reports({
-  transactions,
-  income,
-  expense,
-  balance,
-}) {
-  // Calculate expenses by category
-  const categoryTotals = {};
-
-  transactions.forEach((transaction) => {
-    if (transaction.type === "expense") {
-      categoryTotals[transaction.category] =
-        (categoryTotals[transaction.category] || 0) +
-        Number(transaction.amount);
+    if (value >= 1000000000) {
+      return `$${(value / 1000000000).toFixed(2)}B`;
     }
-  });
 
-  const categories = Object.keys(categoryTotals);
-  const categoryAmounts = Object.values(categoryTotals);
-
-  // Highest spending category
-  let highestCategory = "None";
-  let highestAmount = 0;
-
-  categories.forEach((category) => {
-    if (categoryTotals[category] > highestAmount) {
-      highestAmount = categoryTotals[category];
-      highestCategory = category;
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(2)}M`;
     }
-  });
 
-  // Average expense
-  const expenseTransactions = transactions.filter(
-    (transaction) => transaction.type === "expense"
-  );
+    if (value >= 1000) {
+      return `$${(value / 1000).toFixed(2)}K`;
+    }
 
-  const averageExpense =
-    expenseTransactions.length > 0
-      ? expense / expenseTransactions.length
-      : 0;
-
-  // Savings rate
-  const savingsRate =
-    income > 0 ? ((balance / income) * 100).toFixed(1) : 0;
-
-  // Income vs expense chart
-  const incomeExpenseData = {
-    labels: ["Income", "Expenses", "Balance"],
-
-    datasets: [
-      {
-        label: "Amount",
-        data: [income, expense, balance],
-        borderWidth: 1,
-      },
-    ],
+    return `$${value.toLocaleString("en-US")}`;
   };
 
-  // Category chart
-  const categoryChartData = {
-    labels: categories,
-
-    datasets: [
-      {
-        label: "Expenses",
-        data: categoryAmounts,
-        borderWidth: 1,
-      },
-    ],
+  const formatFullMoney = (amount) => {
+    return `$${Number(amount || 0).toLocaleString("en-US", {
+      maximumFractionDigits: 2
+    })}`;
   };
+
+  const getTopItem = (obj) => {
+    const entries = Object.entries(obj);
+
+    if (entries.length === 0) {
+      return {
+        name: "N/A",
+        amount: 0
+      };
+    }
+
+    entries.sort((a, b) => Number(b[1]) - Number(a[1]));
+
+    return {
+      name: entries[0][0],
+      amount: Number(entries[0][1])
+    };
+  };
+
+  const getPercentage = (amount, total) => {
+    if (!total) return 0;
+
+    return Math.min(
+      100,
+      (Number(amount) / Number(total)) * 100
+    );
+  };
+
+  const topIndustry = getTopItem(industryData);
+  const topCity = getTopItem(cityData);
+  const topInvestmentType = getTopItem(investmentTypeData);
+
+  const industryEntries = Object.entries(industryData)
+    .sort((a, b) => Number(b[1]) - Number(a[1]));
+
+  const cityEntries = Object.entries(cityData)
+    .sort((a, b) => Number(b[1]) - Number(a[1]));
+
+  const investmentTypeEntries = Object.entries(investmentTypeData)
+    .sort((a, b) => Number(b[1]) - Number(a[1]));
+
+  const yearlyEntries = Object.entries(yearlyData)
+    .sort((a, b) => Number(a[0]) - Number(b[0]));
 
   return (
     <div className="reports">
 
-      <div className="reports-title">
+      {/* HEADER */}
+
+      <div className="reports-header">
         <div>
-          <h2>Financial Reports</h2>
-          <p>Overview of your financial activity</p>
-        </div>
-      </div>
+          <h1>Financial Reports</h1>
 
-      {/* Summary Cards */}
-      <div className="report-cards">
-
-        <div className="report-card">
-          <span>💰</span>
-          <p>Total Income</p>
-          <h3>₹{income.toLocaleString()}</h3>
-        </div>
-
-        <div className="report-card">
-          <span>💸</span>
-          <p>Total Expenses</p>
-          <h3>₹{expense.toLocaleString()}</h3>
-        </div>
-
-        <div className="report-card">
-          <span>💵</span>
-          <p>Current Balance</p>
-          <h3>₹{balance.toLocaleString()}</h3>
-        </div>
-
-        <div className="report-card">
-          <span>🧾</span>
-          <p>Transactions</p>
-          <h3>{transactions.length}</h3>
-        </div>
-
-      </div>
-
-      {/* Charts */}
-      <div className="report-charts">
-
-        <div className="report-chart-box">
-          <h3>Income vs Expenses</h3>
-
-          {transactions.length > 0 ? (
-            <Bar
-              data={incomeExpenseData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-              }}
-            />
-          ) : (
-            <p className="no-data">
-              No transaction data available.
-            </p>
-          )}
-        </div>
-
-        <div className="report-chart-box">
-          <h3>Expenses by Category</h3>
-
-          {categories.length > 0 ? (
-            <Doughnut
-              data={categoryChartData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-              }}
-            />
-          ) : (
-            <p className="no-data">
-              No expense data available.
-            </p>
-          )}
-        </div>
-
-      </div>
-
-      {/* Financial Analysis */}
-      <div className="analysis-section">
-
-        <h3>Financial Analysis</h3>
-
-        <div className="analysis-grid">
-
-          <div className="analysis-item">
-            <p>Highest Spending Category</p>
-            <strong>{highestCategory}</strong>
-          </div>
-
-          <div className="analysis-item">
-            <p>Highest Category Amount</p>
-            <strong>
-              ₹{highestAmount.toLocaleString()}
-            </strong>
-          </div>
-
-          <div className="analysis-item">
-            <p>Average Expense</p>
-            <strong>
-              ₹{Math.round(averageExpense).toLocaleString()}
-            </strong>
-          </div>
-
-          <div className="analysis-item">
-            <p>Savings Rate</p>
-            <strong>{savingsRate}%</strong>
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Transaction Report */}
-      <div className="report-table-section">
-
-        <h3>Transaction Report</h3>
-
-        {transactions.length === 0 ? (
-          <p className="no-data">
-            No transactions available.
+          <p>
+            A comprehensive overview of startup investments
+            based on the historical finance dataset.
           </p>
-        ) : (
-          <table>
+        </div>
 
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Type</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
+        <div className="report-badge">
+          📊 Dataset Analytics
+        </div>
+      </div>
 
-            <tbody>
-              {transactions.map((transaction, index) => (
-                <tr key={index}>
+      {/* KPI CARDS */}
 
-                  <td>{transaction.date}</td>
+      <div className="report-kpis">
 
-                  <td>{transaction.category}</td>
+        <div className="report-kpi">
+          <div className="kpi-icon">💰</div>
 
-                  <td>
-                    <span
-                      className={
-                        transaction.type === "income"
-                          ? "income-label"
-                          : "expense-label"
-                      }
-                    >
-                      {transaction.type}
+          <div>
+            <span>Total Investment</span>
+
+            <h2>
+              {formatMoney(summary.total_investment)}
+            </h2>
+
+            <small>
+              Across all investment records
+            </small>
+          </div>
+        </div>
+
+        <div className="report-kpi">
+          <div className="kpi-icon">📋</div>
+
+          <div>
+            <span>Total Transactions</span>
+
+            <h2>
+              {Number(
+                summary.total_transactions || 0
+              ).toLocaleString()}
+            </h2>
+
+            <small>
+              Investment records
+            </small>
+          </div>
+        </div>
+
+        <div className="report-kpi">
+          <div className="kpi-icon">📈</div>
+
+          <div>
+            <span>Average Investment</span>
+
+            <h2>
+              {formatMoney(summary.average_investment)}
+            </h2>
+
+            <small>
+              Average amount per record
+            </small>
+          </div>
+        </div>
+
+        <div className="report-kpi">
+          <div className="kpi-icon">🏆</div>
+
+          <div>
+            <span>Largest Investment</span>
+
+            <h2>
+              {formatMoney(summary.largest_investment)}
+            </h2>
+
+            <small>
+              Highest recorded investment
+            </small>
+          </div>
+        </div>
+
+      </div>
+
+      {/* OVERVIEW */}
+
+      <div className="report-section">
+
+        <div className="section-heading">
+          <div>
+            <h2>Dataset Overview</h2>
+            <p>Key areas with the highest investment activity</p>
+          </div>
+        </div>
+
+        <div className="overview-grid">
+
+          <div className="overview-card">
+            <div className="overview-top">
+              <span>🏢</span>
+              <small>Top Industry</small>
+            </div>
+
+            <h3>{topIndustry.name}</h3>
+
+            <strong>
+              {formatFullMoney(topIndustry.amount)}
+            </strong>
+
+            <div className="mini-progress">
+              <div
+                style={{
+                  width: `${getPercentage(
+                    topIndustry.amount,
+                    summary.total_investment
+                  )}%`
+                }}
+              ></div>
+            </div>
+
+            <p>
+              {getPercentage(
+                topIndustry.amount,
+                summary.total_investment
+              ).toFixed(1)}
+              % of total investment
+            </p>
+          </div>
+
+          <div className="overview-card">
+            <div className="overview-top">
+              <span>📍</span>
+              <small>Top City</small>
+            </div>
+
+            <h3>{topCity.name}</h3>
+
+            <strong>
+              {formatFullMoney(topCity.amount)}
+            </strong>
+
+            <div className="mini-progress">
+              <div
+                style={{
+                  width: `${getPercentage(
+                    topCity.amount,
+                    summary.total_investment
+                  )}%`
+                }}
+              ></div>
+            </div>
+
+            <p>
+              {getPercentage(
+                topCity.amount,
+                summary.total_investment
+              ).toFixed(1)}
+              % of total investment
+            </p>
+          </div>
+
+          <div className="overview-card">
+            <div className="overview-top">
+              <span>💳</span>
+              <small>Top Investment Type</small>
+            </div>
+
+            <h3>{topInvestmentType.name}</h3>
+
+            <strong>
+              {formatFullMoney(topInvestmentType.amount)}
+            </strong>
+
+            <div className="mini-progress">
+              <div
+                style={{
+                  width: `${getPercentage(
+                    topInvestmentType.amount,
+                    summary.total_investment
+                  )}%`
+                }}
+              ></div>
+            </div>
+
+            <p>
+              {getPercentage(
+                topInvestmentType.amount,
+                summary.total_investment
+              ).toFixed(1)}
+              % of total investment
+            </p>
+          </div>
+
+          <div className="overview-card">
+            <div className="overview-top">
+              <span>📅</span>
+              <small>Data Period</small>
+            </div>
+
+            <h3>
+              {yearlyEntries.length} Years
+            </h3>
+
+            <strong>
+              {yearlyEntries.length > 0
+                ? `${yearlyEntries[0][0]} – ${
+                    yearlyEntries[yearlyEntries.length - 1][0]
+                  }`
+                : "N/A"}
+            </strong>
+
+            <p className="overview-description">
+              Historical investment data available
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* YEARLY INVESTMENT */}
+
+      <div className="report-section">
+
+        <div className="section-heading">
+          <div>
+            <h2>Investment by Year</h2>
+            <p>Annual investment distribution</p>
+          </div>
+        </div>
+
+        <div className="year-grid">
+
+          {yearlyEntries.map(([year, amount]) => (
+            <div
+              className="year-card"
+              key={year}
+            >
+              <div className="year-card-top">
+                <span>{year}</span>
+                <span>📅</span>
+              </div>
+
+              <h3>
+                {formatMoney(amount)}
+              </h3>
+
+              <div className="year-bar">
+                <div
+                  style={{
+                    width: `${getPercentage(
+                      amount,
+                      Math.max(
+                        ...Object.values(yearlyData)
+                      )
+                    )}%`
+                  }}
+                ></div>
+              </div>
+
+              <small>
+                {formatFullMoney(amount)}
+              </small>
+            </div>
+          ))}
+
+        </div>
+      </div>
+
+      {/* INDUSTRY */}
+
+      <div className="report-section">
+
+        <div className="section-heading">
+          <div>
+            <h2>Investment by Industry</h2>
+            <p>
+              Top industries ranked by total investment
+            </p>
+          </div>
+        </div>
+
+        <div className="ranking-list">
+
+          {industryEntries.map(
+            ([industry, amount], index) => (
+              <div
+                className="ranking-item"
+                key={industry}
+              >
+                <div className="rank-number">
+                  {index + 1}
+                </div>
+
+                <div className="ranking-content">
+
+                  <div className="ranking-label">
+                    <span>{industry}</span>
+
+                    <strong>
+                      {formatMoney(amount)}
+                    </strong>
+                  </div>
+
+                  <div className="ranking-bar">
+                    <div
+                      style={{
+                        width: `${getPercentage(
+                          amount,
+                          topIndustry.amount
+                        )}%`
+                      }}
+                    ></div>
+                  </div>
+
+                </div>
+              </div>
+            )
+          )}
+
+        </div>
+      </div>
+
+      {/* CITY + INVESTMENT TYPE */}
+
+      <div className="report-two-column">
+
+        {/* CITY */}
+
+        <div className="report-section">
+
+          <div className="section-heading">
+            <div>
+              <h2>Top Cities</h2>
+              <p>Investment distribution by city</p>
+            </div>
+          </div>
+
+          <div className="simple-list">
+
+            {cityEntries.map(
+              ([city, amount], index) => (
+                <div
+                  className="simple-list-item"
+                  key={city}
+                >
+                  <div className="list-left">
+                    <span className="list-number">
+                      {index + 1}
                     </span>
-                  </td>
 
-                  <td>
-                    ₹{Number(transaction.amount).toLocaleString()}
-                  </td>
+                    <span>{city}</span>
+                  </div>
 
-                </tr>
-              ))}
-            </tbody>
+                  <strong>
+                    {formatMoney(amount)}
+                  </strong>
+                </div>
+              )
+            )}
 
-          </table>
-        )}
+          </div>
+
+        </div>
+
+        {/* INVESTMENT TYPE */}
+
+        <div className="report-section">
+
+          <div className="section-heading">
+            <div>
+              <h2>Investment Types</h2>
+              <p>Funding type distribution</p>
+            </div>
+          </div>
+
+          <div className="simple-list">
+
+            {investmentTypeEntries.map(
+              ([type, amount], index) => (
+                <div
+                  className="simple-list-item"
+                  key={type}
+                >
+                  <div className="list-left">
+                    <span className="list-number">
+                      {index + 1}
+                    </span>
+
+                    <span>{type}</span>
+                  </div>
+
+                  <strong>
+                    {formatMoney(amount)}
+                  </strong>
+                </div>
+              )
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* DATASET FOOTER */}
+
+      <div className="dataset-footer">
+
+        <div>
+          <h3>Dataset Summary</h3>
+
+          <p>
+            This report is generated from{" "}
+            <strong>
+              {transactions.length.toLocaleString()}
+            </strong>{" "}
+            historical startup investment records.
+          </p>
+        </div>
+
+        <div className="dataset-stat">
+          <span>Records</span>
+          <strong>
+            {transactions.length.toLocaleString()}
+          </strong>
+        </div>
+
+        <div className="dataset-stat">
+          <span>Years</span>
+          <strong>
+            {yearlyEntries.length}
+          </strong>
+        </div>
 
       </div>
 
