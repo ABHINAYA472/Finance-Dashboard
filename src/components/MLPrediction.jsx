@@ -1,3 +1,4 @@
+const API_URL = "https://finance-dashboard-jhqq.onrender.com";
 import { useEffect, useState } from "react";
 
 export default function MLPrediction() {
@@ -17,7 +18,7 @@ export default function MLPrediction() {
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/filtered-options")
+    fetch(`${API_URL}/filtered-options`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to load data");

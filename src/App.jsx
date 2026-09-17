@@ -1,3 +1,4 @@
+const API_URL = "https://finance-dashboard-jhqq.onrender.com";
 import { useEffect, useState } from "react";
 import "./App.css";
 
@@ -19,7 +20,7 @@ export default function App() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/dashboard-data")
+    fetch(`${API_URL}/dashboard-data`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to load dashboard data");
